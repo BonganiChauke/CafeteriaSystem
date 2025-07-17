@@ -64,23 +64,55 @@ namespace CafeteriaSystem.Controllers
             return View(restaurant.MenuItems.ToList());
         }
 
-        public IActionResult VieMenuItems(int id)
-        {
-            var restaurant = _context.Restaurants
-        .Include(r => r.MenuItems)
-        .FirstOrDefault(r => r.Id == id);
 
+        [HttpGet]
+        public async Task<IActionResult> ViewMenuItems(int id)
+        {
+            var restaurant = await _context.Restaurants
+                .Include(r => r.MenuItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
             if (restaurant == null)
             {
-                return NotFound();
+                Console.WriteLine($"Restaurant not found for Id: {id}");
+                return NotFound($"Restaurant with ID {id} not found.");
             }
 
-            // Pass only the menu items to the view
-            return View(restaurant.MenuItems.ToList());
+            Console.WriteLine($"ViewMenuItems: RestaurantId={id}, RestaurantName={restaurant.Name}, MenuItemsCount={restaurant.MenuItems.Count}");
+            ViewData["RestaurantId"] = restaurant.Id;
+            ViewData["RestaurantName"] = restaurant.Name;
 
-
+            var menuItems = restaurant.MenuItems.ToList();
+            return View(menuItems);
         }
 
+        // GET: Restaurants/CreateMenuItem?restaurantId=5
+        [HttpGet]
+        public async Task<IActionResult> CreateMenuItem(int restaurantId)
+        {
+            if (restaurantId <= 0)
+            {
+                Console.WriteLine($"Invalid RestaurantId: {restaurantId}");
+                return BadRequest("Invalid restaurant ID.");
+            }
+
+            var restaurant = await _context.Restaurants
+                .FirstOrDefaultAsync(r => r.Id == restaurantId);
+            if (restaurant == null)
+            {
+                Console.WriteLine($"Restaurant not found for Id: {restaurantId}");
+                return NotFound($"Restaurant with ID {restaurantId} not found.");
+            }
+
+            Console.WriteLine($"CreateMenuItem GET: RestaurantId={restaurantId}, RestaurantName={restaurant.Name}");
+            ViewData["RestaurantId"] = restaurant.Id;
+            ViewData["RestaurantName"] = restaurant.Name;
+
+            var model = new MenuItem
+            {
+                RestaurantId = restaurantId
+            };
+            return View(model);
+        }
 
         // GET: Restaurants/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -116,13 +148,58 @@ namespace CafeteriaSystem.Controllers
             return View(restaurant.MenuItems);
         }
 
-        
-        [HttpGet]
-        public IActionResult CreateMenuItem(int restaurantId)
+
+        // POST: Restaurants/CreateMenuItem
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateMenuItem([Bind("Name,Description,Price,RestaurantId")] MenuItem menuItem)
         {
-            var model = new MenuItem { RestaurantId = restaurantId };
-            return View(model);
+            Console.WriteLine($"CreateMenuItem POST: RestaurantId={menuItem.RestaurantId}, Name={menuItem.Name}, Price={menuItem.Price}");
+
+            if (menuItem.RestaurantId <= 0)
+            {
+                ModelState.AddModelError("RestaurantId", "Restaurant is required.");
+            }
+            else
+            {
+                var restaurant = await _context.Restaurants
+                    .FirstOrDefaultAsync(r => r.Id == menuItem.RestaurantId);
+                if (restaurant == null)
+                {
+                    Console.WriteLine($"Restaurant not found for Id: {menuItem.RestaurantId}");
+                    ModelState.AddModelError("RestaurantId", $"Restaurant with ID {menuItem.RestaurantId} not found.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine($"ModelState errors: {string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))}");
+                var restaurant = await _context.Restaurants
+                    .FirstOrDefaultAsync(r => r.Id == menuItem.RestaurantId);
+                ViewData["RestaurantId"] = menuItem.RestaurantId;
+                ViewData["RestaurantName"] = restaurant?.Name ?? "Unknown";
+                return View(menuItem);
+            }
+
+            try
+            {
+                _context.MenuItems.Add(menuItem);
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"MenuItem created: Name={menuItem.Name}, RestaurantId={menuItem.RestaurantId}");
+                return RedirectToAction(nameof(ViewMenuItems), new { id = menuItem.RestaurantId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save menu item: {ex.Message}");
+                ModelState.AddModelError("", $"Failed to create menu item: {ex.Message}");
+                var restaurant = await _context.Restaurants
+                    .FirstOrDefaultAsync(r => r.Id == menuItem.RestaurantId);
+                ViewData["RestaurantId"] = menuItem.RestaurantId;
+                ViewData["RestaurantName"] = restaurant?.Name ?? "Unknown";
+                return View(menuItem);
+            }
         }
+       
 
         // GET: Restaurants/Create
         public IActionResult Create()
