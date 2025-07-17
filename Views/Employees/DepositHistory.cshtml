@@ -1,0 +1,35 @@
+﻿@model CafeteriaSystem.Models.DepositHistoryViewModel
+@{
+    ViewData["Title"] = "DepositHistory";
+}
+
+<h2>Deposit History</h2>
+<div>
+    <p><strong>Employee Number:</strong> @Model.EmployeeNumber</p>
+    <p><strong>Current Balance:</strong> @Model.CurrentBalance.ToString("C")</p>
+</div>
+@if (Model.Deposits.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Deposit Amount</th>
+                <th>Deposit Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var deposit in Model.Deposits)
+            {
+                <tr>
+                    <td>@deposit.Amount.ToString("C")</td>
+                    <td>@deposit.DepositDate.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No deposit history available.</p>
+}
+<a asp-controller="Employees" asp-action="Deposit" class="btn btn-primary">Make a Deposit</a>

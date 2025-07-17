@@ -1,0 +1,45 @@
+﻿@model List<CafeteriaSystem.Models.Order>
+@{
+    ViewData["Title"] = "MyOrders";
+}
+
+<h2>My Orders</h2>
+@if (Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Order Date</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.OrderDate.ToString("g")</td>
+                    <td>@order.OrderItems.Sum(oi => oi.Quantity * oi.MenuItem.Price).ToString("C")</td>
+                    <td>@order.Status</td>
+                    <td>
+                        <ul>
+                            @foreach (var item in order.OrderItems)
+                            {
+                                <li>@item.MenuItem.Name (Qty: @item.Quantity, @item.MenuItem.Price.ToString("C") each)</li>
+                            }
+                        </ul>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No orders available.</p>
+}
+<a asp-action="Create" class="btn btn-primary">Place New Order</a>
+

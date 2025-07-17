@@ -1,0 +1,26 @@
+﻿@model CafeteriaSystem.Models.DepositViewModel
+
+@{
+    ViewData["Title"] = "Deposit";
+}
+<h2>Deposit Funds</h2>
+<form asp-action="Deposit" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div>
+        <label asp-for="EmployeeNumber">Employee Number</label>
+        <p class="form-control-static">@Model.EmployeeNumber</p>
+        <input asp-for="EmployeeNumber" type="hidden" />
+    </div>
+    <div>
+        <label asp-for="CurrentBalance">Current Balance</label>
+        <p class="form-control-static">@Model.CurrentBalance.ToString("C")</p>
+    </div>
+    <div>
+        <label asp-for="DepositAmount">Deposit Amount</label>
+        <input asp-for="DepositAmount" class="form-control" type="number" step="0.01" min="0" />
+        <span asp-validation-for="DepositAmount" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Deposit</button>
+</form>
+
+

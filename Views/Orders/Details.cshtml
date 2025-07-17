@@ -1,0 +1,60 @@
+﻿@model CafeteriaSystem.Models.Order
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Order</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.OrderDate)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.OrderDate)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.TotalAmount)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.TotalAmount)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Status)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Employee)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Employee.Id)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
+
+
+@* <h2>Order Details</h2> *@
+@* <div> *@
+@*     <p><strong>Order ID:</strong> @Model.Id</p> *@
+@*     <p><strong>Employee:</strong> @Model.Employee.Name</p> *@
+@*     <p><strong>Order Date:</strong> @Model.OrderDate.ToString("g")</p> *@
+@*     <p><strong>Total Amount:</strong> @Model.OrderItems.Sum(oi => oi.Quantity * oi.MenuItem.Price).ToString("C")</p> *@
+@*     <p><strong>Status:</strong> @Model.Status</p> *@
+@*     <h4>Items</h4> *@
+@*     <ul> *@
+@*         @foreach (var item in Model.OrderItems) *@
+@*         { *@
+@*             <li>@item.MenuItem.Name (Qty: @item.Quantity, @item.MenuItem.Price.ToString("C") each)</li> *@
+@*         } *@
+@*     </ul> *@
+@* </div> *@
+@* <a asp-action="Index" class="btn btn-primary">Back to List</a> *@

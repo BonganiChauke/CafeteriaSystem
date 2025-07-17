@@ -1,0 +1,53 @@
+﻿@model List<CafeteriaSystem.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "View Menu Items";
+
+    // Safely extract ViewData values
+    var restaurantId = ViewData["RestaurantId"] as int? ?? 0;
+    var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
+}
+
+<h2>Menu Items for @restaurantName</h2>
+
+<p>
+    <a asp-action="CreateMenuItem" asp-route-restaurantId="@restaurantId" class="btn btn-primary">
+        Add Menu Item
+    </a>
+</p>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Description</td>
+                    <td>@item.Price.ToString("C")</td>
+                    <td>
+                        <a asp-action="EditMenuItem" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <a asp-action="DeleteMenuItem" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted">No menu items available for this restaurant.</p>
+}
+
+<p>
+    <a asp-action="Index" class="btn btn-secondary">Back to Restaurants</a>
+</p>
