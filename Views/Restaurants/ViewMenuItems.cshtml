@@ -2,8 +2,6 @@
 
 @{
     ViewData["Title"] = "View Menu Items";
-
-    // Safely extract ViewData values
     var restaurantId = ViewData["RestaurantId"] as int? ?? 0;
     var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }

@@ -1,42 +1,45 @@
 ﻿@model CafeteriaSystem.Models.MenuItem
 
 @{
-    ViewData["Title"] = "CreateMenuItem";
+    ViewData["Title"] = "Create Menu Item";
+    var restaurantId = ViewData["RestaurantId"] as int? ?? 0;
+    var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }
 
-<h4> Menu </h4>
+<h4>Create Menu Item for @restaurantName</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create Menu">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <form asp-action="CreateMenuItem" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input type="hidden" name="RestaurantId" id="RestaurantId" value="@restaurantId" />
             <div class="form-group">
-                <label asp-for="RestaurantId" class="control-label"></label>
-                <select asp-for="RestaurantId" class ="form-control" asp-items="ViewBag.RestaurantId"></select>
+                <label class="control-label">Restaurant</label>
+                <input class="form-control" readonly value="@restaurantName" />
             </div>
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
+                <label asp-for="Name" class="control-label">Name</label>
+                <input asp-for="Name" class="form-control" required />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
+                <label asp-for="Description" class="control-label">Description</label>
                 <input asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Price" class="control-label"></label>
-                <input asp-for="Price" class="form-control" />
+                <label asp-for="Price" class="control-label">Price</label>
+                <input asp-for="Price" class="form-control" type="number" step="0.01" min="0" required />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="ViewMenuItems" asp-route-id="@restaurantId" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
