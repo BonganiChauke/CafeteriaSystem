@@ -24,3 +24,7 @@ body {
 .btn{
     margin-top: 10px;
 }
+
+.btn-link {
+    margin-top: 0;
+}
