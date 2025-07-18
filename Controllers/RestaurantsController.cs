@@ -154,7 +154,7 @@ namespace CafeteriaSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateMenuItem([Bind("Name,Description,Price,RestaurantId")] MenuItem menuItem)
         {
-            Console.WriteLine($"CreateMenuItem POST: RestaurantId={menuItem.RestaurantId}, Name={menuItem.Name}, Price={menuItem.Price}");
+            Console.WriteLine($"CreateMenuItem POST: RestaurantId={menuItem.RestaurantId}, RestaurantName={menuItem.Restaurant} Name={menuItem.Name}, Price={menuItem.Price}");
 
             if (menuItem.RestaurantId <= 0)
             {
@@ -183,6 +183,9 @@ namespace CafeteriaSystem.Controllers
 
             try
             {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                menuItem.Restaurant = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 _context.MenuItems.Add(menuItem);
                 await _context.SaveChangesAsync();
                 Console.WriteLine($"MenuItem created: Name={menuItem.Name}, RestaurantId={menuItem.RestaurantId}");
@@ -231,6 +234,7 @@ namespace CafeteriaSystem.Controllers
             }
             return View(restaurant);
         }
+
 
         // GET: Restaurants/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -315,6 +319,60 @@ namespace CafeteriaSystem.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
+        //menu item
+        [HttpGet]
+        public async Task<IActionResult> EditMenuItem(int id)
+        {
+            var menuItem = await _context.MenuItems.FindAsync(id);
+            if (menuItem == null) return NotFound();
+            return View(menuItem);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditMenuItem(int id, [Bind("Id,Name,Description,Price,RestaurantId")] MenuItem menuItem)
+        {
+            if (id != menuItem.Id) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                _context.Update(menuItem);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(ViewMenuItems), new { id = menuItem.RestaurantId });
+            }
+
+            return View(menuItem);
+        }
+
+        //
+        [HttpGet]
+        public async Task<IActionResult> DeleteMenuItem(int id)
+        {
+            var menuItem = await _context.MenuItems
+                .Include(m => m.Restaurant)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (menuItem == null) return NotFound();
+            return View(menuItem);
+        }
+
+        [HttpPost, ActionName("DeleteMenuItem")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMenuItemConfirmed(int id)
+        {
+            var menuItem = await _context.MenuItems.FindAsync(id);
+            if (menuItem != null)
+            {
+                _context.MenuItems.Remove(menuItem);
+                await _context.SaveChangesAsync();
+            }
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            return RedirectToAction(nameof(ViewMenuItems), new { id = menuItem.RestaurantId });
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+
 
         private bool RestaurantExists(int id)
         {
