@@ -3,35 +3,28 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CafeteriaSystem</title>
+    <title>@ViewData["Title"] - Cafeteria</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CafeteriaSystem.styles.css" asp-append-version="true" />
 </head>
 <body>
-   
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Cafeteria System</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Cafeteria</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-center">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+                    <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <form asp-controller="Account" asp-action="Logout" method="post">
-                                @Html.AntiForgeryToken()
-                            <li class="nav-item">
-                                <button type="submit" class="btn btn-link nav-link text-danger">Logout</button>
-                            </li>
-                                
-                            </form>
 
                             @if (User.IsInRole("Employee"))
                             {
@@ -47,6 +40,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Orders" asp-action="MyOrders">My Orders</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link btn-link btn btn-success text-white" style="cursor: not-allowed"> Employee Logged In  </a>
+                                </li>
 
                             }
                             @if (User.IsInRole("Admin"))
@@ -60,8 +56,18 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-controller="Orders" asp-action="ManageOrders">Manage Orders</a>
                                 </li>
-                                
+                                <li class="nav-item">
+                                    <a class="nav-link btn-link btn btn-success text-white" style="cursor: not-allowed"> Admin Logged In  </a>
+                                </li>
+
                             }
+
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                @Html.AntiForgeryToken()
+                            <li class="nav-item">
+                                <button type="submit" class="btn btn-link btn-danger w-100 mt-2 mt-sm-0 ms-sm-1 nav-link text-white">Logout</button>
+                            </li>
+                            </form>
 
                         }
                         else
@@ -72,7 +78,7 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Register</a>
                             </li>
-                            
+
                         }
                     </ul>
                 </div>
@@ -88,7 +94,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - CafeteriaSystem - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - Cafeteria - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
