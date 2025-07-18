@@ -6,11 +6,11 @@
     var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }
 
-<h2>Menu Items for @restaurantName</h2>
+<h2>Menu for @restaurantName</h2>
 
 <p>
     <a asp-action="CreateMenuItem" asp-route-restaurantId="@restaurantId" class="btn btn-primary">
-        Add Menu Item
+        Add Menu
     </a>
 </p>
 
