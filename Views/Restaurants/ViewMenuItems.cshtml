@@ -6,46 +6,70 @@
     var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }
 
-<h2>Menu for @restaurantName</h2>
+<h2>Menu Items for @restaurantName</h2>
 
-<p>
-    <a asp-action="CreateMenuItem" asp-route-restaurantId="@restaurantId" class="btn btn-primary">
-        Add Menu
-    </a>
-</p>
-
-@if (Model != null && Model.Any())
-{
+<form asp-action="Order" asp-route-restaurantId="@restaurantId" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <input type="hidden" name="RestaurantId" value="@restaurantId" />
     <table class="table table-bordered table-striped">
         <thead class="thead-dark">
             <tr>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Price</th>
+                <th>Quantity</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @if (Model != null && Model.Any())
+            {
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <tr>
+                        <td>@Model[i].Name</td>
+                        <td>@Model[i].Description</td>
+                        <td>@Model[i].Price.ToString("C")</td>
+                        <td>
+                            <input type="number" name="OrderItems[@i].Quantity" min="0" value="0" class="form-control" style="width: 100px;" />
+                            <input type="hidden" name="OrderItems[@i].MenuItemId" value="@Model[i].Id" />
+                            <input type="hidden" name="OrderItems[@i].UnitPrice" value="@Model[i].Price" />
+                        </td>
+                        <td>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+                            {
+                                <a asp-action="EditMenuItem" asp-route-id="@Model[i].Id" class="btn btn-sm btn-warning">Edit</a>
+                                <a asp-action="DeleteMenuItem" asp-route-id="@Model[i].Id" class="btn btn-sm btn-danger">Delete</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>@item.Name</td>
-                    <td>@item.Description</td>
-                    <td>@item.Price.ToString("C")</td>
-                    <td>
-                        <a asp-action="EditMenuItem" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <a asp-action="DeleteMenuItem" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                    </td>
+                    <td colspan="5" class="text-muted">No menu items available for this restaurant.</td>
                 </tr>
             }
         </tbody>
     </table>
-}
-else
-{
-    <p class="text-muted">No menu items available for this restaurant.</p>
-}
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="form-group">
+            <input type="submit" value="Place Order" class="btn btn-primary" />
+        </div>
+    }
+</form>
 
 <p>
-    <a asp-action="Index" class="btn btn-secondary">Back to Restaurants</a>
+    <a asp-action="PlaceOrder" class="btn btn-secondary">Back to Restaurants</a>
+    @if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+    {
+        <a asp-action="CreateMenuItem" asp-route-restaurantId="@restaurantId" class="btn btn-primary">Add Menu Item</a>
+    }
 </p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
