@@ -2,12 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Reflection.Emit;
 namespace CafeteriaSystem.Data
 {
     public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options){}
+            : base(options) { }
 
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Restaurant> Restaurants { get; set; }
@@ -25,6 +26,13 @@ namespace CafeteriaSystem.Data
                .HasForeignKey(d => d.EmployeeId)
                .HasPrincipalKey(e => e.UserId);
 
+            modelBuilder.Entity<Employee>()
+        .HasMany(e => e.Orders)
+        .WithOne(o => o.Employee)
+        .HasForeignKey(o => o.EmployeeId)
+        .HasPrincipalKey(e => e.Id); 
+
+
             modelBuilder.Entity<Restaurant>()
             .HasMany(r => r.MenuItems)
             .WithOne(m => m.Restaurant)
@@ -39,7 +47,6 @@ namespace CafeteriaSystem.Data
                 .HasOne(oi => oi.MenuItem)
                 .WithMany()
                 .HasForeignKey(oi => oi.MenuItemId);
-
         }
     }
 }
