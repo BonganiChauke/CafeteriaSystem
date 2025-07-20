@@ -10,5 +10,6 @@
         public string UserId { get; set; } = string.Empty;
         public decimal MonthlyDepositTotal { get; set; }
         public List<DepositHistory> DepositHistories { get; set; } = new List<DepositHistory>();
+        public List<Order> Orders { get; set; } = new List<Order>();
     }
 }

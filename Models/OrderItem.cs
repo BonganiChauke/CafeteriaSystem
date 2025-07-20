@@ -1,4 +1,7 @@
-﻿namespace CafeteriaSystem.Models
+﻿using CafeteriaSystem.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace CafeteriaSystem.Models
 {
     public class OrderItem
     {
@@ -7,6 +10,7 @@
         public int MenuItemId { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPriceAtTimeOfOrder { get; set; }
+        public decimal UnitPrice { get; set; }
         public MenuItem MenuItem { get; set; } = null!;
         public Order Order { get; set; } = null!;
     }

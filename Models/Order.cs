@@ -1,4 +1,7 @@
-﻿namespace CafeteriaSystem.Models
+﻿using CafeteriaSystem.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace CafeteriaSystem.Models
 {
     public class Order
     {
@@ -8,6 +11,8 @@
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = "Pending";
         public Employee Employee { get; set; } = null!;
+        public int RestaurantId { get; set; }
+        public Restaurant Restaurant { get; set; } = null!;
         public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
