@@ -373,6 +373,149 @@ namespace CafeteriaSystem.Controllers
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
+        // GET: Restaurants/PlaceOrder
+        [HttpGet]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> PlaceOrder()
+        {
+            var restaurants = await _context.Restaurants.ToListAsync();
+            Console.WriteLine($"PlaceOrder: Retrieved {restaurants.Count} restaurants");
+            return View(restaurants);
+        }
+
+        // ******************
+        // GET: Restaurants/Order?restaurantId=5
+        [HttpGet]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> Order(int restaurantId)
+        {
+            var restaurant = await _context.Restaurants
+                .Include(r => r.MenuItems)
+                .FirstOrDefaultAsync(r => r.Id == restaurantId);
+            if (restaurant == null)
+            {
+                Console.WriteLine($"Restaurant not found for Id: {restaurantId}");
+                return NotFound($"Restaurant with ID {restaurantId} not found.");
+            }
+
+            Console.WriteLine($"Order GET: RestaurantId={restaurantId}, RestaurantName={restaurant.Name}");
+            ViewData["RestaurantId"] = restaurant.Id;
+            ViewData["RestaurantName"] = restaurant.Name;
+
+            var menuItems = restaurant.MenuItems.ToList();
+            return View("ViewMenuItems", menuItems);
+        }
+
+        // POST: Restaurants/Order
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> Order(int restaurantId, List<OrderItem> orderItems)
+        {
+            Console.WriteLine($"Order POST: RestaurantId={restaurantId}, OrderItemsCount={orderItems?.Count ?? 0}");
+
+            var restaurant = await _context.Restaurants
+                .FirstOrDefaultAsync(r => r.Id == restaurantId);
+            if (restaurant == null)
+            {
+                Console.WriteLine($"Restaurant not found for Id: {restaurantId}");
+                return NotFound($"Restaurant with ID {restaurantId} not found.");
+            }
+
+            // Filter valid order items (Quantity > 0)
+            orderItems = orderItems?.Where(oi => oi.Quantity > 0).ToList() ?? new List<OrderItem>();
+            if (!orderItems.Any())
+            {
+                ModelState.AddModelError("", "Please select at least one menu item with a quantity greater than 0.");
+            }
+
+            // Validate menu items and calculate total
+            decimal totalAmount = 0;
+            foreach (var item in orderItems)
+            {
+                var menuItem = await _context.MenuItems
+                    .FirstOrDefaultAsync(m => m.Id == item.MenuItemId && m.RestaurantId == restaurantId);
+                if (menuItem == null)
+                {
+                    ModelState.AddModelError("", $"Menu item with ID {item.MenuItemId} is invalid or does not belong to the restaurant.");
+                }
+                else
+                {
+                    item.UnitPrice = menuItem.Price;
+                    totalAmount += item.Quantity * item.UnitPrice;
+                }
+            }
+
+            // Get current employee
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var employee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.UserId == userId);
+            if (employee == null)
+            {
+                Console.WriteLine($"Employee not found for UserId: {userId}");
+                return NotFound("Employee not found.");
+            }
+
+            // Check balance
+            if (employee.Balance < totalAmount)
+            {
+                ModelState.AddModelError("", $"Insufficient balance. Available: {employee.Balance:C}, Required: {totalAmount:C}");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine($"ModelState errors: {string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))}");
+                ViewData["RestaurantId"] = restaurantId;
+                ViewData["RestaurantName"] = restaurant.Name;
+                var menuItems = await _context.MenuItems.Where(m => m.RestaurantId == restaurantId).ToListAsync();
+                return View("ViewMenuItems", menuItems);
+            }
+
+            // Create order
+            var order = new Order
+            {
+                EmployeeId = employee.Id,
+                RestaurantId = restaurantId,
+                OrderDate = DateTime.Now,
+                TotalAmount = totalAmount,
+                OrderItems = orderItems
+            };
+
+            try
+            {
+                _context.Orders.Add(order);
+                employee.Balance -= totalAmount;
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"Order created: OrderId={order.Id}, EmployeeId={userId}, TotalAmount={totalAmount}, NewBalance={employee.Balance}");
+                return RedirectToAction(nameof(OrderConfirmation), new { orderId = order.Id });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to place order: {ex.Message}");
+                ModelState.AddModelError("", $"Failed to place order: {ex.Message}");
+                ViewData["RestaurantId"] = restaurantId;
+                ViewData["RestaurantName"] = restaurant.Name;
+                var menuItems = await _context.MenuItems.Where(m => m.RestaurantId == restaurantId).ToListAsync();
+                return View("ViewMenuItems", menuItems);
+            }
+        }
+
+        // GET: Restaurants/OrderConfirmation/5
+        [HttpGet]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> OrderConfirmation(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.MenuItem)
+                .Include(o => o.Restaurant)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null)
+            {
+                return NotFound("Order not found.");
+            }
+            return View(order);
+        }
 
         private bool RestaurantExists(int id)
         {
