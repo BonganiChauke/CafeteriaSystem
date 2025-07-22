@@ -1,35 +1,71 @@
-﻿@model IEnumerable<CafeteriaSystem.Models.Restaurant>
+﻿@model CafeteriaSystem.Models.OrderViewModel
 
 @{
-    ViewData["Title"] = "Place Order - Select Restaurant";
+    ViewData["Title"] = "View Menu Items";
+    var restaurantId = Model?.RestaurantId ?? 0;
+    var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }
 
-<h1>Select a Restaurant</h1>
+<h1>Menu for @restaurantName</h1>
 
-<table class="table table-bordered table-striped">
-    <thead class="thead-dark">
-        <tr>
-            <th>Name</th>
-            <th>Location</th>
-            <th>Contact Number</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                <td>@Html.DisplayFor(modelItem => item.LocationDescription)</td>
-                <td>@Html.DisplayFor(modelItem => item.ContactNumber)</td>
-                <td>
-                    <a asp-action="Order" asp-route-restaurantId="@item.Id" class="btn btn-primary">View Menu</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="RestaurantId">Restaurant</label>
+        <select asp-for="RestaurantId" asp-items="Model.RestaurantOptions" class="form-control" onchange="this.form.submit()">
+            <option value="">Select a restaurant</option>
+        </select>
+        <span asp-validation-for="RestaurantId" class="text-danger"></span>
+    </div>
 
-<p>
+    @if (Model != null && Model.RestaurantId > 0 && Model.MenuItems != null && Model.MenuItems.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.OrderItems != null && Model.OrderItems.Any())
+                {
+                    @for (int i = 0; i < Model.OrderItems.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model.OrderItems[i].MenuItemName</td>
+                            <td>@Model.OrderItems[i].UnitPrice.ToString("C")</td>
+                            <td>
+                                <input type="number" name="OrderItems[@i].Quantity" value="@Model.OrderItems[i].Quantity" min="0" class="form-control" />
+                                <input type="hidden" name="OrderItems[@i].MenuItemId" value="@Model.OrderItems[i].MenuItemId" />
+                                <input type="hidden" name="OrderItems[@i].MenuItemName" value="@Model.OrderItems[i].MenuItemName" />
+                                <input type="hidden" name="OrderItems[@i].UnitPrice" value="@Model.OrderItems[i].UnitPrice" />
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="3">No items available for this restaurant.</td></tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No menu items available. Please select a restaurant.</p>
+    }
+
+    <div class="form-group">
+        <label asp-for="EmployeeNumber">Employee Number</label>
+        <input asp-for="EmployeeNumber" class="form-control" />
+        <span asp-validation-for="EmployeeNumber" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Place Order</button>
     <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
-</p>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
