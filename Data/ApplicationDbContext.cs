@@ -44,9 +44,10 @@ namespace CafeteriaSystem.Data
         .HasForeignKey(oi => oi.OrderId);
 
             modelBuilder.Entity<OrderItem>()
-                .HasOne(oi => oi.MenuItem)
-                .WithMany()
-                .HasForeignKey(oi => oi.MenuItemId);
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
