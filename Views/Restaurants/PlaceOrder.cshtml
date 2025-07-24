@@ -1,0 +1,135 @@
+﻿@model CafeteriaSystem.Models.OrderViewModel
+
+@{
+    ViewData["Title"] = "Place Order";
+    var restaurantId = Model?.RestaurantId ?? 0;
+    var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
+}
+
+<h2>Place Your Order</h2>
+<p>Select a restaurant, add items to your cart, and place the order when ready.</p>
+
+<form asp-action="PlaceOrder" asp-controller="Restaurants" method="post" id="restaurantForm">
+    <div class="form-group">
+        <label asp-for="RestaurantId">Select Restaurant</label>
+        <select asp-for="RestaurantId" asp-items="Model?.RestaurantOptions" class="form-control" onchange="loadMenuItems()">
+            @if (Model?.RestaurantOptions != null && Model.RestaurantOptions.Any())
+            {
+                <option value="">Choose a restaurant</option>
+                @foreach (var item in Model.RestaurantOptions)
+                {
+                    <option value="@item.Value">
+                        @item.Text
+                    </option>
+                }
+            }
+            else
+            {
+                <option value="">No restaurants available</option>
+            }
+        </select>
+        <span asp-validation-for="RestaurantId" class="text-danger"></span>
+    </div>
+</form>
+
+@if (Model != null && Model.RestaurantId > 0 && Model.MenuItems != null && Model.MenuItems.Any())
+{
+    <h3>Menu Items</h3>
+    <form asp-action="AddToCart" asp-controller="Restaurants" method="post" id="menuForm">
+        <input type="hidden" name="restaurantId" value="@Model.RestaurantId" />
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.MenuItems.Count; i++)
+                {
+                    <tr>
+                        <td>@Model.MenuItems[i].Name</td>
+                        <td>@Model.MenuItems[i].Price.ToString("C")</td>
+                        <td>
+                            <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 100px;" />
+                            <input type="hidden" name="menuItemId" value="@Model.MenuItems[i].Id" />
+                        </td>
+                        <td>
+                            <button type="submit" class="btn btn-primary">Add to Cart</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </form>
+
+    <h3>Your Cart</h3>
+    @if (Model.CartItems != null && Model.CartItems.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.CartItems)
+                {
+                    <tr>
+                        <td>@item.MenuItemName (ID: @item.MenuItemId)</td>
+                        <td>@item.UnitPrice.ToString("C")</td>
+                        <td>@item.Quantity</td>
+                        <td>@(item.Quantity * item.UnitPrice).ToString("C")</td>
+                        <td>
+                            <form asp-action="RemoveFromCart" asp-controller="Restaurants" method="post">
+                                <input type="hidden" name="restaurantId" value="@Model.RestaurantId" />
+                                <input type="hidden" name="menuItemId" value="@item.MenuItemId" />
+                                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3"><strong>Total</strong></td>
+                    <td><strong>@Model.CartItems.Sum(ci => ci.Quantity * ci.UnitPrice).ToString("C")</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        <form asp-action="PlaceOrder" asp-controller="Restaurants" method="post">
+            <input type="hidden" asp-for="RestaurantId" />
+            <button type="submit" class="btn btn-success btn-lg">Place Order</button>
+        </form>
+    }
+    else
+    {
+        <p class="text-info">Your cart is empty. Add items from the menu above.</p>
+    }
+}
+else
+{
+    <p class="text-warning">No menu items available. Please select a restaurant.</p>
+}
+
+<a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3">Back to Home</a>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Load menu items when restaurant changes
+        function loadMenuItems() {
+            var form = document.getElementById('restaurantForm');
+            if (form) {
+                form.submit();
+            }
+        }
+    </script>
+}
