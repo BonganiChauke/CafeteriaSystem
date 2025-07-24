@@ -17,8 +17,11 @@
                 <th>Name</th>
                 <th>Description</th>
                 <th>Price</th>
-                <th>Quantity</th>
-                <th>Actions</th>
+                @if (User.IsInRole("Admin"))
+                {
+                    <th>Actions</th>
+                }
+                
             </tr>
         </thead>
         <tbody>
@@ -31,12 +34,7 @@
                         <td>@Model[i].Description</td>
                         <td>@Model[i].Price.ToString("C")</td>
                         <td>
-                            <input type="number" name="OrderItems[@i].Quantity" min="0" value="0" class="form-control" style="width: 100px;" />
-                            <input type="hidden" name="OrderItems[@i].MenuItemId" value="@Model[i].Id" />
-                            <input type="hidden" name="OrderItems[@i].UnitPrice" value="@Model[i].Price" />
-                        </td>
-                        <td>
-                            @if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+                            @if (User.IsInRole("Admin"))
                             {
                                 <a asp-action="EditMenuItem" asp-route-id="@Model[i].Id" class="btn btn-sm btn-warning">Edit</a>
                                 <a asp-action="DeleteMenuItem" asp-route-id="@Model[i].Id" class="btn btn-sm btn-danger">Delete</a>
@@ -56,18 +54,25 @@
 
     @if (Model != null && Model.Any())
     {
-        <div class="form-group">
-            <input type="submit" value="Place Order" class="btn btn-primary" />
-        </div>
+        @if (User.IsInRole("Employee"))
+        {
+            <div class="form-group">
+                <input type="submit" value="Place Order" class="btn btn-primary" />
+            </div>
+        }
+        
     }
 </form>
 
 <p>
-    <a asp-action="PlaceOrder" class="btn btn-secondary">Back to Restaurants</a>
-    @if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+    
+    @if (User.IsInRole("Admin"))
     {
         <a asp-action="CreateMenuItem" asp-route-restaurantId="@restaurantId" class="btn btn-primary">Add Menu Item</a>
     }
+
+    <a asp-action="Index" class="btn btn-secondary">Back to Restaurants</a>
+
 </p>
 
 @section Scripts {

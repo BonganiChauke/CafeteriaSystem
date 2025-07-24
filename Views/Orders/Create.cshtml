@@ -6,12 +6,13 @@
     var restaurantName = ViewData["RestaurantName"] as string ?? "Unknown";
 }
 
-<h1>Menu for @restaurantName</h1>
+<h4>Menu</h4>
+<hr />
 
-<form asp-action="Create" method="post">
+<form asp-action="Order" asp-controller="Restaurants" method="post">
     <div class="form-group">
         <label asp-for="RestaurantId">Restaurant</label>
-        <select asp-for="RestaurantId" asp-items="Model.RestaurantOptions" class="form-control" onchange="this.form.submit()">
+        <select asp-for="RestaurantId" asp-items="Model?.RestaurantOptions" class="form-control" onchange="this.form.submit()">
             <option value="">Select a restaurant</option>
         </select>
         <span asp-validation-for="RestaurantId" class="text-danger"></span>
@@ -55,12 +56,6 @@
     {
         <p>No menu items available. Please select a restaurant.</p>
     }
-
-    <div class="form-group">
-        <label asp-for="EmployeeNumber">Employee Number</label>
-        <input asp-for="EmployeeNumber" class="form-control" />
-        <span asp-validation-for="EmployeeNumber" class="text-danger"></span>
-    </div>
 
     <button type="submit" class="btn btn-primary">Place Order</button>
     <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
