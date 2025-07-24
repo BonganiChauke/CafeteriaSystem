@@ -36,6 +36,14 @@ builder.Services.ConfigureApplicationCookie(options =>
    
 });
 
+//sessions
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout
+    options.Cookie.HttpOnly = true; // Enhance security
+    options.Cookie.IsEssential = true; // Make cookie essential for GDPR compliance
+});
+
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IRestaurantService, RestaurantService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -46,6 +54,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 app.UseAuthentication(); 
 app.UseAuthorization();
 
