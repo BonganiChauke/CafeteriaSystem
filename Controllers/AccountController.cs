@@ -93,6 +93,13 @@ namespace CafeteriaSystem.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        
+        //access denied returned
+        public IActionResult AccessDenied(string returnUrl)
+        {
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+
+
     }
 }
