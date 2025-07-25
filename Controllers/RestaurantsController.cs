@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,12 +11,13 @@ using CafeteriaSystem.Data;
 using CafeteriaSystem.Models;
 using CafeteriaSystem.Services;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
+using CafeteriaSystem.Helpers;
 
 
 namespace CafeteriaSystem.Controllers
 {
-    // Restricts access to this controller to users with the "Admin" role
-    [Authorize(Roles = "Admin")]
+
     public class RestaurantsController : Controller
     {
         private readonly ApplicationDbContext _context; // Database context for entity operations
@@ -36,6 +39,10 @@ namespace CafeteriaSystem.Controllers
         public async Task<IActionResult> Index()
         {
             var restaurants = await _restaurantService.GetRestaurantsAsync(); // Fetch all restaurants via service
+            var menuItems = _context.MenuItems.ToList();
+            var cart = HttpContext.Session.GetObjectFromJson<List<OrderItemViewModel>>("CartItems") ?? new List<OrderItemViewModel>();
+            ViewBag.Cart = cart;
+            ViewBag.Total = cart.Sum(item => item.Price * item.Quantity);
             return View(restaurants); // Render the Index view with the restaurant list
         }
 
@@ -358,16 +365,7 @@ namespace CafeteriaSystem.Controllers
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
-        // GET: /Restaurants/PlaceOrder
-        // Displays a list of restaurants for placing an order, restricted to Employee role
-        [HttpGet]
-        [Authorize(Roles = "Employee")]
-        public async Task<IActionResult> PlaceOrder()
-        {
-            var restaurants = await _context.Restaurants.ToListAsync(); // Fetch all restaurants
-            Console.WriteLine($"PlaceOrder: Retrieved {restaurants.Count} restaurants"); // Debug log
-            return View(restaurants); // Render the PlaceOrder view with restaurants
-        }
+
 
         // GET: /Restaurants/InitiateOrder
         // Initiates an order process with restaurant selection, restricted to Employee role
@@ -546,6 +544,234 @@ namespace CafeteriaSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
             return View(restaurant);
+        }
+
+
+        // GET: /Restaurants/PlaceOrder
+        // Displays the order placement page with a cart for employees
+        [HttpGet]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> PlaceOrder()
+        {
+            var restaurants = await _restaurantService.GetRestaurantsAsync();
+            var model = new OrderViewModel
+            {
+                RestaurantOptions = new SelectList(restaurants ?? new List<Restaurant>(), "Id", "Name"),
+                MenuItems = new List<MenuItem>(),
+                OrderItems = new List<OrderItemViewModel>(),
+                CartItems = GetCartItemsFromSession() ?? new List<OrderItemViewModel>()
+            };
+
+            if (restaurants?.Any() ?? false)
+            {
+                model.RestaurantId = restaurants.First().Id;
+                model.MenuItems = (await _context.Restaurants
+                    .Include(r => r.MenuItems)
+                    .FirstOrDefaultAsync(r => r.Id == model.RestaurantId))?.MenuItems.ToList() ?? new List<MenuItem>();
+            }
+
+            return View(model);
+        }
+
+        // POST: /Restaurants/PlaceOrder/AddToCart
+        // Adds a selected item to the cart
+        [HttpPost]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> AddToCart(int restaurantId, int menuItemId, int quantity)
+        {
+            Console.WriteLine($"AddToCart: restaurantId={restaurantId}, menuItemId={menuItemId}, quantity={quantity}"); // Log input
+
+            if (quantity <= 0)
+            {
+                Console.WriteLine("Invalid quantity detected.");
+                return BadRequest("Quantity must be greater than 0.");
+            }
+
+            var restaurant = await _context.Restaurants
+                .Include(r => r.MenuItems)
+                .FirstOrDefaultAsync(r => r.Id == restaurantId);
+            if (restaurant == null)
+            {
+                Console.WriteLine($"Restaurant not found for ID: {restaurantId}");
+                return NotFound($"Restaurant with ID {restaurantId} not found.");
+            }
+
+            var menuItem = restaurant.MenuItems.FirstOrDefault(m => m.Id == menuItemId);
+            if (menuItem == null)
+            {
+                Console.WriteLine($"Menu item not found for ID: {menuItemId}");
+                return NotFound($"Menu item with ID {menuItemId} not found.");
+            }
+
+            // Retrieve existing cart and log its state
+            var cartItems = GetCartItemsFromSession() ?? new List<OrderItemViewModel>();
+            Console.WriteLine($"Cart size before update: {cartItems.Count}, Items: {string.Join(", ", cartItems.Select(ci => $"{ci.MenuItemName} (Qty: {ci.Quantity})"))}");
+
+            var existingItem = cartItems.FirstOrDefault(ci => ci.MenuItemId == menuItemId);
+            if (existingItem != null)
+            {
+                existingItem.Quantity += quantity;
+                Console.WriteLine($"Updated {menuItem.Name} quantity to {existingItem.Quantity}");
+            }
+            else
+            {
+                cartItems.Add(new OrderItemViewModel
+                {
+                    MenuItemId = menuItemId,
+                    MenuItemName = menuItem.Name,
+                    UnitPrice = menuItem.Price,
+                    Quantity = quantity
+                });
+                Console.WriteLine($"Added {menuItem.Name} with quantity {quantity} to cart");
+            }
+
+            // Save and log the updated cart
+            SaveCartItemsToSession(cartItems);
+            Console.WriteLine($"Cart size after update: {cartItems.Count}, Saved JSON: {HttpContext.Session.GetString("OrderCart")}");
+
+            // Reload full model to ensure consistency
+            var restaurants = await _restaurantService.GetRestaurantsAsync();
+            var model = new OrderViewModel
+            {
+                RestaurantId = restaurantId,
+                RestaurantOptions = new SelectList(restaurants ?? new List<Restaurant>(), "Id", "Name"),
+                MenuItems = restaurant.MenuItems.ToList(),
+                CartItems = GetCartItemsFromSession() // Re-fetch to verify session
+            };
+
+            if (model.CartItems == null || !model.CartItems.Any())
+            {
+                Console.WriteLine("Warning: CartItems is null or empty after session retrieval");
+            }
+
+            return View("PlaceOrder", model); // Render with updated model
+        }
+
+
+        // POST: /Restaurants/PlaceOrder/RemoveFromCart
+        // Removes a selected item from the cart
+        [HttpPost]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> RemoveFromCart(int restaurantId, int menuItemId)
+        {
+            var cartItems = GetCartItemsFromSession() ?? new List<OrderItemViewModel>();
+            var itemToRemove = cartItems.FirstOrDefault(ci => ci.MenuItemId == menuItemId);
+            if (itemToRemove != null)
+            {
+                cartItems.Remove(itemToRemove);
+                Console.WriteLine($"Removed {itemToRemove.MenuItemName} from cart");
+                SaveCartItemsToSession(cartItems);
+            }
+
+            return RedirectToAction(nameof(PlaceOrder), new { restaurantId = restaurantId });
+        }
+
+        // POST: /Restaurants/PlaceOrder
+        // Handles the final order submission from the cart
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> PlaceOrder(OrderViewModel model)
+        {
+            var cartItems = GetCartItemsFromSession() ?? new List<OrderItemViewModel>();
+            if (!cartItems.Any())
+            {
+                ModelState.AddModelError("", "Your cart is empty. Please add items before placing the order.");
+                model.RestaurantOptions = new SelectList(await _restaurantService.GetRestaurantsAsync() ?? new List<Restaurant>(), "Id", "Name");
+                model.MenuItems = (await _context.Restaurants
+                    .Include(r => r.MenuItems)
+                    .FirstOrDefaultAsync(r => r.Id == model.RestaurantId))?.MenuItems.ToList() ?? new List<MenuItem>();
+                model.CartItems = cartItems;
+                return View(model);
+            }
+
+            var restaurant = await _context.Restaurants
+                .FirstOrDefaultAsync(r => r.Id == model.RestaurantId);
+            if (restaurant == null)
+            {
+                return NotFound($"Restaurant with ID {model.RestaurantId} not found.");
+            }
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
+            if (employee == null)
+            {
+                return NotFound("Employee not found.");
+            }
+
+            decimal totalAmount = cartItems.Sum(ci => ci.Quantity * ci.UnitPrice);
+            if (employee.Balance < totalAmount)
+            {
+                ModelState.AddModelError("", $"Insufficient balance. Available: {employee.Balance:C}, Required: {totalAmount:C}");
+                model.RestaurantOptions = new SelectList(await _restaurantService.GetRestaurantsAsync() ?? new List<Restaurant>(), "Id", "Name");
+                model.MenuItems = (await _context.Restaurants
+                    .Include(r => r.MenuItems)
+                    .FirstOrDefaultAsync(r => r.Id == model.RestaurantId))?.MenuItems.ToList() ?? new List<MenuItem>();
+                model.CartItems = cartItems;
+                return View(model);
+            }
+
+            var orderViewModel = new OrderViewModel
+            {
+                RestaurantId = model.RestaurantId,
+                UserId = userId,
+                EmployeeNumber = employee.EmployeeNumber,
+                OrderItems = cartItems,
+                MenuItems = model.MenuItems
+            };
+
+            try
+            {
+                var result = await _orderService.PlaceOrderAsync(orderViewModel);
+                if (result.Success)
+                {
+                    Console.WriteLine($"Order created: OrderId={result.OrderId}, EmployeeId={userId}, TotalAmount={totalAmount}");
+                    ClearCartSession(); // Clear cart after successful order
+                    return RedirectToAction("OrderConfirmation", "Restaurants", new { orderId = result.OrderId });
+                }
+                ModelState.AddModelError("", result.ErrorMessage);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to place order: {ex.Message}");
+                ModelState.AddModelError("", $"Failed to place order: {ex.Message}");
+            }
+
+            model.RestaurantOptions = new SelectList(await _restaurantService.GetRestaurantsAsync() ?? new List<Restaurant>(), "Id", "Name");
+            model.MenuItems = (await _context.Restaurants
+                .Include(r => r.MenuItems)
+                .FirstOrDefaultAsync(r => r.Id == model.RestaurantId))?.MenuItems.ToList() ?? new List<MenuItem>();
+            model.CartItems = cartItems;
+            return View(model);
+        }
+
+
+
+        private List<OrderItemViewModel> GetCartItemsFromSession()
+        {
+            try
+            {
+                var sessionData = HttpContext.Session.GetString("OrderCart");
+                if (string.IsNullOrEmpty(sessionData))
+                    return new List<OrderItemViewModel>();
+
+                return JsonConvert.DeserializeObject<List<OrderItemViewModel>>(sessionData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Session retrieval failed: {ex.Message}");
+                return new List<OrderItemViewModel>(); // Return empty list on failure
+            }
+        }
+
+        private void SaveCartItemsToSession(List<OrderItemViewModel> cartItems)
+        {
+            HttpContext.Session.SetString("OrderCart", JsonConvert.SerializeObject(cartItems));
+        }
+
+        private void ClearCartSession()
+        {
+            HttpContext.Session.Remove("OrderCart");
         }
 
         // method to check if a restaurant exists
