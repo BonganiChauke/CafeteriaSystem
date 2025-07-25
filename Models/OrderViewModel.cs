@@ -14,6 +14,7 @@ namespace CafeteriaSystem.Models
         public string? MenuItemName { get; set; }
         public decimal UnitPrice { get; set; } 
         public int Quantity { get; set; }
-        public SelectList RestaurantOptions { get; set; }
+        public SelectList? RestaurantOptions { get; set; }
+        public List<OrderItemViewModel>? CartItems { get; set; }
     }
 }

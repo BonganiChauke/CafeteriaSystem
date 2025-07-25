@@ -9,6 +9,6 @@ namespace CafeteriaSystem.Models
         public DateTime DepositDate { get; set; }
         public Employee Employee { get; set; } = null!;
         public decimal MonthlyDepositTotal { get; set; }
-        public string TransactionType { get; set; }
+        public string? TransactionType { get; set; }
     }
 }
