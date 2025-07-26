@@ -8,6 +8,7 @@
         public decimal UnitPrice { get; set; }
         public string? MenuItemName { get; set; }
         public string? RestaurantName { get; set; }
+        public int RestaurantId { get; set; }
 
     }
 }
