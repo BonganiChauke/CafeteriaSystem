@@ -2,7 +2,51 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="bg-primary text-white text-center py-5 w-100">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">Welcome to Cafeteria App</h1>
+        <p class="lead mb-4">Simplify your cafeteria experience with our easy-to-use ordering system!</p>
+        <a href="#get-started" class="btn btn-light btn-lg">Get Started</a>
+    </div>
+</section>
+
+<section id="features" class="py-5">
+    <div class="container text-center">
+        <h2 class="mb-4">Why Choose Cafeteria App?</h2>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Easy Ordering</h5>
+                        <p class="card-text">Browse menus, select items, and place orders with just a few clicks.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Real-Time Updates</h5>
+                        <p class="card-text">Track your cart and receive instant updates on your order status.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Multiple Restaurants</h5>
+                        <p class="card-text">Order from various popular restaurants in one app.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="get-started" class="bg-light py-5 text-center">
+    <div class="container">
+        <h2 class="mb-4">Get Started Today</h2>
+        <p class="lead mb-4">Join your fellow collegues and enjoy a seamless cafeteria experience.</p>
+        <a href="/Restaurants/PlaceOrder" class="btn btn-primary btn-lg">Start Ordering</a>
+    </div>
+</section>
+
